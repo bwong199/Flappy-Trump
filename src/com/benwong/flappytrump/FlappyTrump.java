@@ -2,7 +2,9 @@ package com.benwong.flappytrump;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Intersector;
@@ -13,6 +15,7 @@ import java.util.Random;
 public class FlappyTrump extends ApplicationAdapter {
 	SpriteBatch batch;
 	Texture background;
+	Texture gameover;
 //	ShapeRenderer shapeRenderer;
 
 	Texture bird;
@@ -23,6 +26,10 @@ public class FlappyTrump extends ApplicationAdapter {
 	float birdY = 0;
 	float velocity = 0;
 	Circle birdCircle;
+
+	int score = 0;
+	int scoringTube = 0;
+	BitmapFont font;
 
 	int gameState = 0;
 	float gravity = 2;
@@ -49,11 +56,13 @@ public class FlappyTrump extends ApplicationAdapter {
 //		shapeRenderer = new ShapeRenderer();
 		background = new Texture("bg.png");
 		bird = new Texture("trump.png");
+		gameover = new Texture("obama.jpg");
+
 		birds = new Texture[2];
 		birds[0] = new Texture("trump.png");
 		birds[1] = new Texture("trump2.png");
 
-		birdY = Gdx.graphics.getHeight()/2 - birds[0].getHeight()/2;
+
 
 		topTube = new Texture("toptube.png");
 		bottomTube = new Texture("clinton.jpg");
@@ -64,7 +73,16 @@ public class FlappyTrump extends ApplicationAdapter {
 		topTubeRectangles = new Rectangle[numberOfTubes];
 		bottomTubeRectangles = new Rectangle[numberOfTubes];
 
+		font = new BitmapFont();
+		font.setColor(Color.WHITE);
+		font.getData().setScale(10);
 
+		startGame();
+
+	}
+
+	public void startGame(){
+		birdY = Gdx.graphics.getHeight()/2 - birds[0].getHeight()/2;
 
 		for(int i = 0; i < numberOfTubes; i++){
 
@@ -73,7 +91,6 @@ public class FlappyTrump extends ApplicationAdapter {
 			topTubeRectangles[i] = new Rectangle();
 			bottomTubeRectangles[i] = new Rectangle();
 		}
-
 	}
 
 	@Override
@@ -84,7 +101,19 @@ public class FlappyTrump extends ApplicationAdapter {
 
 		timer++;
 
-		if(gameState != 0){
+		if(gameState == 1){
+
+			if(tubeX[scoringTube] < Gdx.graphics.getWidth() / 2){
+				score++;
+
+				Gdx.app.log("Score", String.valueOf(score));
+				if(scoringTube < numberOfTubes - 1){
+					scoringTube++;
+
+				}else {
+					scoringTube = 0;
+				}
+			}
 
 			if (Gdx.input.justTouched()){
 				Gdx.app.log("Touched", "Yep!");
@@ -100,6 +129,8 @@ public class FlappyTrump extends ApplicationAdapter {
 					tubeOffset[i] = (randomGenerator.nextFloat() - 0.5f) * (Gdx.graphics.getHeight() - gap - 200);
 				} else {
 					tubeX[i] = tubeX[i] - tubeVelocity;
+
+
 				}
 
 				tubeX[i] = tubeX[i] - tubeVelocity;
@@ -113,18 +144,31 @@ public class FlappyTrump extends ApplicationAdapter {
 
 
 
-			if(birdY > 0 || velocity < 0){
+			if(birdY > 0 ){
 
 				velocity = velocity + gravity;
 				birdY -= velocity;
+			} else {
+				gameState = 2;
 			}
 
 
-		} else {
+		} else if (gameState == 0){
+			if (Gdx.input.justTouched()){
+				gameState = 1;
 
+			}
+
+		} else if (gameState == 2){
+
+			batch.draw(gameover, Gdx.graphics.getWidth()/2 - gameover.getWidth()/2, Gdx.graphics.getHeight()/2 - gameover.getHeight()/2);
 
 			if (Gdx.input.justTouched()){
 				gameState = 1;
+				startGame();
+				score = 0;
+				scoringTube = 0;
+				velocity = 0;
 			}
 		}
 
@@ -140,7 +184,7 @@ public class FlappyTrump extends ApplicationAdapter {
 
 
 		batch.draw(birds[flapState], Gdx.graphics.getWidth()/2 - birds[flapState].getWidth()/2,  birdY);
-		batch.end();
+		font.draw(batch, String.valueOf(score), 100, 200);
 
 //		shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 //		shapeRenderer.setColor(com.badlogic.gdx.graphics.Color.RED);
@@ -154,12 +198,12 @@ public class FlappyTrump extends ApplicationAdapter {
 //			shapeRenderer.rect(tubeX[i],   Gdx.graphics.getHeight()/2 - gap/2 - bottomTube.getHeight() + tubeOffset[i], bottomTube.getWidth(), bottomTube.getHeight());
 
 			if(Intersector.overlaps(birdCircle, topTubeRectangles[i]) || Intersector.overlaps(birdCircle, bottomTubeRectangles[i])){
-				Gdx.app.log("Collision", "Collided");
+				gameState = 2;
 			}
 		}
 //		shapeRenderer.end();
 
-
+		batch.end();
 
 	}
 
